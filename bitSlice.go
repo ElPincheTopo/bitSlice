@@ -27,46 +27,36 @@ import (
 	"strconv"
 )
 
-type bitSlice struct {
+type BitSlice struct {
 	array []int
 	len   int
 	cap   int
 }
 
 // New returns an empty bit slice with length and capacity value of 0.
-func New() BitSlice {
-	return new(bitSlice)
+func New() *BitSlice {
+	return new(BitSlice)
 }
 
 // Make returns a bit slice with the specified length and capacity.
 func Make(length, capacity int) BitSlice {
-	a := bitSlice{make([]int, length, capacity), length, capacity}
+	a := BitSlice{make([]int, length, capacity), length, capacity}
 	fmt.Printf("%#v\n", a)
 	return a
 }
 
 // Temporary function while I define idiomatic names for accessing the values.
-func (bs bitSlice) Get(pos int) int {
+func (bs BitSlice) Get(pos int) int {
 	return bs.array[pos]
 }
 
 // Temporary function while I define idiomatic names for accessing the values.
-func (bs bitSlice) Set(pos, elem int) {
+func (bs BitSlice) Set(pos, elem int) {
 	bs.array[pos] = elem
 }
 
-// Auxiliary function to make Len(BiteSlice) work.
-func (bs bitSlice) Len() int {
-	return bs.len
-}
-
-// Auxiliary function to make Cap(BiteSlice) work.
-func (bs bitSlice) Cap() int {
-	return bs.cap
-}
-
 // Function to print the slice in an idiomatic way.
-func (bs bitSlice) String() string {
+func (bs BitSlice) String() string {
 	buffer := "["
 
 	for i := 0; i < Len(bs); i++ {
@@ -80,22 +70,14 @@ func (bs bitSlice) String() string {
 	return buffer
 }
 
-// Interface && methods
-type BitSlice interface {
-	Get(int) int
-	Set(int, int)
-	Len() int
-	Cap() int
-}
-
 // The Len functions returns the number of elements on the bit slice.
 func Len(slice BitSlice) int {
-	return slice.Len()
+	return slice.len
 }
 
 // The Cap function returns the maximum length the slice can reach when resliced;
 func Cap(slice BitSlice) int {
-	return slice.Cap()
+	return slice.cap
 }
 
 // The Append function appends elements to the end of a slice. If
