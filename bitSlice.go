@@ -51,7 +51,7 @@ func (bs BitSlice) Get(pos int) int {
 	
 	subArray := pos / 8    // Get position of the corresponding unit8 in array
 	pos = 7 - (pos - 8*subArray) // Transform the array position to the subArray 
-								 // position. Then get the "math" position.
+	                             // position. Then get the "math" position.
 	return ((underlyingArray[subArray] & (uint8(1) << uint8(pos))) >> uint8(pos))
 }
 
