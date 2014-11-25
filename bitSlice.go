@@ -24,11 +24,10 @@ package bitSlice
 
 import (
 	"fmt"
-	"strconv"
 )
 
 type BitSlice struct {
-	array []int
+	array []uint8
 	len   int
 	cap   int
 }
@@ -41,33 +40,45 @@ func New() *BitSlice {
 // Make returns a bit slice with the specified length and capacity.
 func Make(length, capacity int) BitSlice {
 	a := BitSlice{make([]int, length, capacity), length, capacity}
-	fmt.Printf("%#v\n", a)
 	return a
 }
 
 // Temporary function while I define idiomatic names for accessing the values.
 func (bs BitSlice) Get(pos int) int {
-	return bs.array[pos]
+	if pos >= len {
+		panic("runtime error: index out of range")
+	}
+	
+	subArray := pos / 8    // Get position of the corresponding unit8 in array
+	pos = 7 - (pos - 8*subArray) // Transform the array position to the subArray 
+								 // position. Then get the "math" position.
+	return ((underlyingArray[subArray] & (uint8(1) << uint8(pos))) >> uint8(pos))
 }
 
 // Temporary function while I define idiomatic names for accessing the values.
-func (bs BitSlice) Set(pos, elem int) {
-	bs.array[pos] = elem
+func (bs *BitSlice) Set(pos int) {
+	if pos >= bs.len {
+		panic("runtime error: index out of range")
+	}
+
+	subArray := pos/8 // Get position of the corresponding unit8
+	pos = pos - 8*subArray // Transform the array position to the subArray position
+	bs.array[subArray] |= 1 << uint8(7-pos)
+}
+
+func (bs *BitSlice) Unset(pos int) {
+	if pos >= bs.len {
+		panic("runtime error: index out of range")
+	}
+
+	subArray := pos/8 // Get position of the corresponding unit8
+	pos = pos - 8*subArray // Transform the array position to the subArray position
+	bs.array[subArray] &^= 1 << uint8(7-pos)
 }
 
 // Function to print the slice in an idiomatic way.
 func (bs BitSlice) String() string {
-	buffer := "["
-
-	for i := 0; i < Len(bs); i++ {
-		buffer += strconv.Itoa(bs.Get(i))
-		if i+1 < Len(bs) {
-			buffer += " "
-		}
-	}
-	buffer += "]"
-
-	return buffer
+	return fmt.Sprintf("[%08b]", array)
 }
 
 // The Len functions returns the number of elements on the bit slice.
@@ -85,10 +96,10 @@ func Cap(slice BitSlice) int {
 // new elements. If it does not, a new underlying array will be allocated.
 // Append returns the updated slice. It is therefore necessary to store the
 // result of append, often in the variable holding the slice itself:
-//	slice = Append(slice, elem1, elem2)
-//	slice = Append(slice, anotherBitSlice...)
+//  slice = Append(slice, elem1, elem2)
+//  slice = Append(slice, anotherBitSlice...)
 // As a special case, it is legal to append a int to a bit slice, like this:
-//	slice = append(slice, 0x01101100101)
+//  slice = append(slice, 0x01101100101)
 // And the Append function will automatically append each separate bit.
 func Append(slice BitSlice, elems ...int) BitSlice {
 	return slice
