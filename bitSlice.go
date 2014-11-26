@@ -74,7 +74,7 @@ func (bs BitSlice) Get(pos int) int {
 }
 
 // Set sets the pos position in the array to 1.
-func (bs *BitSlice) Set(pos int) {
+func (bs BitSlice) Set(pos int) {
 	if pos >= bs.len {
 		panic("runtime error: index out of range")
 	}
@@ -88,7 +88,7 @@ func (bs *BitSlice) Set(pos int) {
 }
 
 // Unset sets the pos position in the array to 0.
-func (bs *BitSlice) Unset(pos int) {
+func (bs BitSlice) Unset(pos int) {
 	if pos >= bs.len {
 		panic("runtime error: index out of range")
 	}
