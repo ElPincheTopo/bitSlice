@@ -203,7 +203,6 @@ func Append(slice BitSlice, elems ...int) BitSlice {
 
 		// Get how much capacity is needed in multiples of 8
 		capDifference := slice.len + len(elems) - slice.cap
-		fmt.Println("cap", capDifference)
 		newCap := capDifference / 8
 		if capDifference%8 != 0 {
 			newCap++
