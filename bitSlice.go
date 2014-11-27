@@ -26,6 +26,7 @@ package bitSlice
 
 import (
 	"fmt"
+	"strconv"
 )
 
 type BitSlice struct {
@@ -35,8 +36,10 @@ type BitSlice struct {
 	first int
 }
 
-// Make returns a bit slice with the specified length and capacity. The slice in
-// the parameters is there to simulate an "optional" capacity parameter.
+// Make returns a bit slice with the specified length and capacity. The capacity
+// of the slice always goes to the closest multiple of 8 that is bigger than the
+// capacity that you specified. The slice in the parameters is there to simulate
+// an "optional" capacity parameter.
 func Make(length int, capacity ...int) BitSlice {
 	var cap int
 
@@ -50,12 +53,19 @@ func Make(length int, capacity ...int) BitSlice {
 			panic("Slice capacity can't be less than it's length")
 		}
 	}
+
+	// Calculate the len and cap of the actual slice used.
 	arrayLen := length / 8
 	if length%8 != 0 {
 		arrayLen++
 	}
-	//arrayCap := cap/8.0
-	return BitSlice{make([]uint8, arrayLen), length, cap, 0}
+	arrayCap := cap / 8
+	if cap%8 != 0 {
+		arrayCap++
+		cap = 8 * arrayCap
+	}
+
+	return BitSlice{make([]uint8, arrayLen, arrayCap), length, cap, 0}
 }
 
 // Get returns the value of the pos position of the array.
@@ -73,7 +83,7 @@ func (bs BitSlice) Get(pos int) int {
 	return int((bs.array[subArray] & (uint8(1) << uint8(pos))) >> uint8(pos))
 }
 
-// Set sets the pos position in the array to 1.
+// Set sets the pos position in the slice to 1.
 func (bs BitSlice) Set(pos int) {
 	if pos >= bs.len {
 		panic("runtime error: index out of range")
@@ -81,13 +91,18 @@ func (bs BitSlice) Set(pos int) {
 
 	// Convert slice position into the position in the underlying array
 	pos = pos + bs.first
+	bs.set(pos)
+}
 
+// set receives the position in the array to be set. It doesn't check for
+// boundries or other saftye issues, that should be handled by the caller.
+func (bs BitSlice) set(pos int) {
 	subArray := pos / 8    // Get position of the corresponding unit8
 	pos = pos - 8*subArray // Transform the array position to the subArray position
 	bs.array[subArray] |= 1 << uint8(7-pos)
 }
 
-// Unset sets the pos position in the array to 0.
+// Unset sets the pos position in the slice to 0.
 func (bs BitSlice) Unset(pos int) {
 	if pos >= bs.len {
 		panic("runtime error: index out of range")
@@ -95,7 +110,12 @@ func (bs BitSlice) Unset(pos int) {
 
 	// Convert slice position into the position in the underlying array
 	pos = pos + bs.first
+	bs.unset(pos)
+}
 
+// unset receives the position in the array to be unset. It doesn't check for
+// boundries or other saftye issues, that should be handled by the caller.
+func (bs BitSlice) unset(pos int) {
 	subArray := pos / 8    // Get position of the corresponding unit8
 	pos = pos - 8*subArray // Transform the array position to the subArray position
 	bs.array[subArray] &^= 1 << uint8(7-pos)
@@ -172,14 +192,59 @@ func Cap(slice BitSlice) int {
 //  slice = Append(slice, elem1, elem2)
 //  slice = Append(slice, anotherBitSlice...)
 // As a special case, it is legal to append a int to a bit slice, like this:
-//  slice = append(slice, 0x01101100101)
-// And the Append function will automatically append each separate bit.
+//  slice = append(slice, 0xF)
+// And the Append function will automatically append each separate bit (1111).
 func Append(slice BitSlice, elems ...int) BitSlice {
+	// Convert slice pos to array pos
+	pos := slice.len
+	pos = pos + slice.first
+
+	// Convert the int slice to a "bit" slice.
+	elems = convertSlice(elems)
+
+	// TODO: Check for capacity and non negatives
+	if
+
+	for _, bit := range elems {
+		if bit == 0 {
+			slice.unset(pos)
+		} else {
+			slice.set(pos)
+		}
+		pos++
+		slice.len++
+	}
+
 	return slice
 }
 
+// Func convertSlice receives a slice of ints and returns a slice of "bits". The
+// conversion is done by leaving the 0 and 1 as they are but converting all
+// other numbers to their binary representation, and then adding them to the
+// slice.
+func convertSlice(elems []int) []int {
+	var resultSlice []int
+	var str string
+
+	for _, bit := range elems {
+		switch bit {
+		case 0, 1:
+			resultSlice = append(resultSlice, bit)
+		default:
+			str = fmt.Sprintf("%b", bit)
+			for _, char := range str {
+				digit, err := strconv.ParseInt(string(char), 10, 32)
+				if err != nil {
+					panic("MEROL")
+				}
+				resultSlice = append(resultSlice, int(digit))
+			}
+		}
+	}
+	return resultSlice
+}
+
 // The copy function copies bits from a source slice into a destination slice.
-// (As a special case, it also will copy the corresponding bits from integers..)
 // The source and destination may overlap. Copy returns the number of elements
 // copied, which will be the minimum of len(src) and len(dst).
 func Copy(dst, src BitSlice) int {
