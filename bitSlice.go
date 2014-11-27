@@ -195,16 +195,28 @@ func Cap(slice BitSlice) int {
 //  slice = append(slice, 0xF)
 // And the Append function will automatically append each separate bit (1111).
 func Append(slice BitSlice, elems ...int) BitSlice {
+	// Convert the int slice to a "bit" slice.
+	elems = convertSlice(elems)
+
+	// Grow array if there is not enough capacity
+	if slice.cap < slice.len+len(elems) {
+
+		// Get how much capacity is needed in multiples of 8
+		capDifference := slice.len + len(elems) - slice.cap
+		fmt.Println("cap", capDifference)
+		newCap := capDifference / 8
+		if capDifference%8 != 0 {
+			newCap++
+		}
+		slice.array = append(slice.array, make([]uint8, newCap)...)
+		slice.cap = 8 * cap(slice.array)
+	}
+
 	// Convert slice pos to array pos
 	pos := slice.len
 	pos = pos + slice.first
 
-	// Convert the int slice to a "bit" slice.
-	elems = convertSlice(elems)
-
-	// TODO: Check for capacity and non negatives
-	if
-
+	// For each bit write a new bit to the slice
 	for _, bit := range elems {
 		if bit == 0 {
 			slice.unset(pos)
